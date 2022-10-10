@@ -30,11 +30,12 @@ size_t ByteStream::write(const string &data) {
 }
 
 //! \param[in] len bytes will be copied from the output side of the _Stream
+//in short, return string with length of len when possible 
 string ByteStream::peek_output(const size_t len) const {
 	std::string peek = "";
     size_t Remainder =  this->buffer_size();
       /*2.the number of byte can be popped is the smaller value of Remainder and len*/
-    size_t ByteRemoved =  len >= Remainder ? Remainder : len;
+    size_t ByteRemoved =  (len >= Remainder) ? Remainder : len;
     int count = 0;
     while(count < ByteRemoved)
 	   peek.push_back(_Stream[count++]);
@@ -47,14 +48,14 @@ void ByteStream::pop_output(const size_t len) {
     if (len > _Stream.size()) {
         set_error();
     }
-    	size_t Remainder =  this->buffer_size();
+    size_t Remainder =  this->buffer_size();
 
     /*2.the number of byte can be popped is the smaller value of Remainder and len*/
     size_t ByteRemoved =  len >= Remainder ? Remainder : len; 
 
     /*3.modify the _ReadPtr to the appropriate position*/
-    size_t Counter = 0;
-    while(Counter++ < ByteRemoved)
+    size_t count = 0;
+    while(count++ < ByteRemoved)
         _Stream.pop_front();
     
     /*4.add the ByteRemoved to _TotalRead*/

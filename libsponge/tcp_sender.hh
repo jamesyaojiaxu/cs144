@@ -31,7 +31,14 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+    
+    unsigned int passed_time;
 
+    WrappingInt32 ackno;
+
+    uint16_t window_size;
+
+    unsigned int rto;
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
@@ -87,6 +94,7 @@ class TCPSender {
     //! \brief relative seqno for the next byte to be sent
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
+    void start_tick();
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH

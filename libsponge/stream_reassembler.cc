@@ -16,7 +16,7 @@ StreamReassembler::StreamReassembler(const size_t capacity)
     : _output(capacity)
     , _capacity(capacity)
     , _eof(false)
-    , unass(0)
+    , unass(0)//first unassembled
     , buf(capacity, '\0')
     , mask(capacity, false)
     , size(0) {}
@@ -29,10 +29,6 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         _eof = true;
     }
     size_t len = data.size();
-    /*if (len == 0 && _eof && size == 0) {
-        _output.end_input();
-        return;
-    }*/
     if (index > unass) {
         /*index in unacceptable*/
         if (index - unass > _capacity - _output.buffer_size()) {
