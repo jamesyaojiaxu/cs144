@@ -23,8 +23,6 @@ class TCPSender {
     //! outbound queue of segments that the TCPSender wants sent
     std::queue<TCPSegment> _segments_out{};
 
-    std::queue<TCPSegment> _segments_cache;
-
     //! retransmission timer for the connection
     unsigned int _initial_retransmission_timeout;
 
@@ -36,22 +34,32 @@ class TCPSender {
 
 
 
-    //WrappingInt32 _seqno;
+    //below are variables defined by me
+    std::queue<TCPSegment> _segments_cache{};//save flying segment in case missing
 
-    uint32_t ackno; 
+    //uint32_t ackno; 
 
     uint16_t window_size;
 
-    bool _syn;
+    bool _syn;//if set _syn=true ,the tcp_sender will send syn packet later
 
     bool _fin;
 
-    uint64_t checkpoint;
+    //uint64_t checkpoint;
 
-    size_t time;
+    int consec_retr;//consecutive_retransmissions
 
-    size_t rto;
+    size_t time;//time has passed in 
 
+    size_t rto;//retransmisson timeout
+    
+    uint64_t flight;//bytes in flight
+
+    uint64_t absackno;//absolute ack number
+
+    uint64_t lastackno;
+    
+    bool timer_running;//if timer is running?
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
@@ -108,7 +116,7 @@ class TCPSender {
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
 
-    void send_segment(int read_count,TCPSegment seg,size_t index);
+    void send_segment(TCPSegment seg);
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH

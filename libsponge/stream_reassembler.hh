@@ -14,17 +14,17 @@ class StreamReassembler {
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
-    std::deque<char> buf;//string to br written into stream,start from 0
-    std::deque<char> mask;//correspond to buf
+    std::deque<char> buf;//string to be written into stream,start from 0
+    std::deque<char> mask;//it's correspond to buf
     bool _eof;
-
-    size_t size;
+    
+    size_t size;//size of valid character in deque
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
     //! \note This capacity limits both the bytes that have been reassembled,
     //! and those that have not yet been reassembled.
     StreamReassembler(const size_t capacity);
-    size_t unass;
+    size_t unass;//first unassembled byte
     //! \brief Receive a substring and write any newly contiguous bytes into the stream.
     //!
     //! The StreamReassembler will stay within the memory limits of the `capacity`.
