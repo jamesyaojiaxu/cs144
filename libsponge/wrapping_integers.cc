@@ -32,7 +32,7 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     u_int32_t offset=n-wrap(checkpoint,isn);
     uint64_t result=offset +checkpoint;
-    if(offset>(1<<31)&&result>(1ul<<32)){
+    if(offset>=(1u<<31)&&result>=(1ul<<32)){
         result-=(1ul<<32);
     }
     return result;

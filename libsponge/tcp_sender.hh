@@ -39,7 +39,7 @@ class TCPSender {
 
     //uint32_t ackno; 
 
-    uint16_t window_size;
+    uint16_t _window_size;
 
     bool _syn;//if set _syn=true ,the tcp_sender will send syn packet later
 
@@ -53,7 +53,7 @@ class TCPSender {
 
     size_t rto;//retransmisson timeout
     
-    uint64_t flight;//bytes in flight
+    size_t flight;//bytes in flight
 
     uint64_t absackno;//absolute ack number
 
