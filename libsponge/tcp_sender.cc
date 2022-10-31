@@ -21,38 +21,37 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
     : _isn(fixed_isn.value_or(WrappingInt32{random_device()()}))
     , _initial_retransmission_timeout{retx_timeout}
     , _stream(capacity)
-    , _syn(true)
-    ,consec_retr(0)
-    ,rto(_initial_retransmission_timeout)
-    ,flight(0)
-    ,lastackno(0)
-    ,_fin(false)
-    ,timer_running(false) {}
+    , consec_retr(0)
+    , rto(_initial_retransmission_timeout)
+    , flight(0)
+    , send_base(0)
+    , _fin(false)
+    , timer_running(false) {}
 
 uint64_t TCPSender::bytes_in_flight() const { return flight; }
 
 void TCPSender::fill_window() {
-    if (_next_seqno == 0) {
+    if (nextseqnum == 0) {
+        // state is CLOSED,where no syn sent
         TCPSegment seg;
         seg.header().syn = true;
-        _syn = false;
         send_segment(seg);
         return;
-    }     else if (_next_seqno == flight) {
+    } else if (nextseqnum > 0 && nextseqnum == flight) {
         // state is SYN SENT, don't send SYN
         return;
     }
     // normal segment
     TCPSegment seg;
-    size_t win=_window_size>0?_window_size:1;
-    while (win != (_next_seqno-lastackno) && !_fin) {//当窗口中还有未发送的字符时
+    size_t win = _window_size > 0 ? _window_size : 1;
+    while (win != (nextseqnum - send_base) && !_fin) {  //当窗口中还有未发送的字符时
         //结束发送
-        seg.payload() = _stream.read(min(win -(_next_seqno-lastackno),TCPConfig::MAX_PAYLOAD_SIZE));
-        if(seg.length_in_sequence_space() < win && _stream.eof()){
+        seg.payload() = _stream.read(min(win - (nextseqnum - send_base), TCPConfig::MAX_PAYLOAD_SIZE));
+        if (seg.length_in_sequence_space() < win && _stream.eof()) {
             seg.header().fin = true;
             _fin = true;
         }
-        if(seg.length_in_sequence_space()==0)
+        if (seg.length_in_sequence_space() == 0)
             return;
         send_segment(seg);
     }
@@ -61,50 +60,52 @@ void TCPSender::fill_window() {
 //! \param ackno The remote receiver's ackno (acknowledgment number)
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
-    absackno = unwrap(ackno,_isn,lastackno);
-    if (absackno > _next_seqno) {
-        return ;
+    y = unwrap(ackno, _isn, send_base);
+    if (y > nextseqnum) {
+        return;
     }
-    _window_size = window_size;
-    if (absackno <= lastackno) {
-        return ;
-    }
-
-    lastackno=absackno;
-
-    while(!_segments_cache.empty()){
-        TCPSegment seg=_segments_cache.front();
-        if(static_cast<int32_t>(seg.length_in_sequence_space()) <= ackno-seg.header().seqno){
-            flight-=seg.length_in_sequence_space();
-            _segments_cache.pop();
-        }else{
-            break;
+    _window_size = window_size;//?
+    if (y > send_base) {
+        send_base = y;
+        while (!_segments_cache.empty()) {
+            TCPSegment seg = _segments_cache.front();
+            if (static_cast<int32_t>(seg.length_in_sequence_space()) <= ackno - seg.header().seqno) {
+                flight -= seg.length_in_sequence_space();
+                _segments_cache.pop();
+            } else {
+                break;
+            }
         }
-    }
-    fill_window();
-    rto=_initial_retransmission_timeout;
-    consec_retr=0;
-    if(!_segments_cache.empty()){
-        time=0;
-        timer_running = true;
+        fill_window();
+        rto = _initial_retransmission_timeout;
+        consec_retr = 0;
+        //if there are currently not-yet-acknowledged segments
+        if (!_segments_cache.empty()) {
+            //start timer
+            time = 0;
+            timer_running = true;
+        }
     }
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
-void TCPSender::tick(const size_t ms_since_last_tick) { 
-    time+=ms_since_last_tick;
-    if(_segments_cache.empty()){
+void TCPSender::tick(const size_t ms_since_last_tick) {
+    time += ms_since_last_tick;
+    //When all outstanding data has been acknowledged, stop the retransmission timer.
+    if (_segments_cache.empty()) {
         timer_running = false;
         return;
     }
-    if(time >= rto){
-        TCPSegment seg=_segments_cache.front();
+
+    if (time >= rto) {
+        //retransmit not-yet-acknowledged segment with smallest sequence number
+        TCPSegment seg = _segments_cache.front();
         _segments_out.push(seg);
-        if(_window_size != 0){
+        if (_window_size != 0) {
             consec_retr++;
-            rto=rto*2;
+            rto = rto * 2;
         }
-        //start timer
+        // start timer
         timer_running = true;
         time = 0;
     }
@@ -117,17 +118,20 @@ void TCPSender::send_empty_segment() {
     _segments_out.push(seg);
 }
 
+//发送数据包(除了组装payload,设置syn/fin标志位,其它都做了)
 void TCPSender::send_segment(TCPSegment seg) {
-    //if timer not running,then run it
-    if(!timer_running){
-        timer_running=true;
-        time=0;
-    }
-    seg.header().seqno = wrap(_next_seqno,_isn);
+    // create tcp segment with sequence number nextseqnum
+    seg.header().seqno = wrap(nextseqnum, _isn);
 
-    _segments_out.push(seg);
+    // if timer not running,then run it
+    if (!timer_running) {
+        timer_running = true;
+        time = 0;
+    }
+
+    _segments_out.push(seg);  // pass segment to ip
     _segments_cache.push(seg);
 
-    _next_seqno += seg.length_in_sequence_space();
-    flight+=seg.length_in_sequence_space();
+    nextseqnum += seg.length_in_sequence_space();  // nextseqnum=nextseqnum+length(data)
+    flight += seg.length_in_sequence_space();
 }

@@ -30,7 +30,7 @@ class TCPSender {
     ByteStream _stream;
 
     //! the (absolute) sequence number for the next byte to be sent
-    uint64_t _next_seqno{0};
+    uint64_t nextseqnum{0};
 
 
 
@@ -41,7 +41,7 @@ class TCPSender {
 
     uint16_t _window_size;
 
-    bool _syn;//if set _syn=true ,the tcp_sender will send syn packet later
+   // bool _syn;//if set _syn=true ,the tcp_sender will send syn packet later
 
     bool _fin;
 
@@ -55,9 +55,9 @@ class TCPSender {
     
     size_t flight;//bytes in flight
 
-    uint64_t absackno;//absolute ack number
+    uint64_t y;//absolute ack number
 
-    uint64_t lastackno;
+    uint64_t send_base;
     
     bool timer_running;//if timer is running?
   public:
@@ -110,10 +110,10 @@ class TCPSender {
     //!@{
 
     //! \brief absolute seqno for the next byte to be sent
-    uint64_t next_seqno_absolute() const { return _next_seqno; }
+    uint64_t next_seqno_absolute() const { return nextseqnum; }
 
     //! \brief relative seqno for the next byte to be sent
-    WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
+    WrappingInt32 next_seqno() const { return wrap(nextseqnum, _isn); }
     //!@}
 
     void send_segment(TCPSegment seg);
