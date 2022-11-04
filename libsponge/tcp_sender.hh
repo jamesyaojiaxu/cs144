@@ -37,15 +37,9 @@ class TCPSender {
     //below are variables defined by me
     std::queue<TCPSegment> _segments_cache{};//save flying segment in case missing
 
-    //uint32_t ackno; 
-
     uint16_t _window_size;
 
-   // bool _syn;//if set _syn=true ,the tcp_sender will send syn packet later
-
     bool _fin;
-
-    //uint64_t checkpoint;
 
     int consec_retr;//consecutive_retransmissions
 
@@ -117,6 +111,7 @@ class TCPSender {
     //!@}
 
     void send_segment(TCPSegment seg);
+
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
