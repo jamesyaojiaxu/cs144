@@ -15,7 +15,7 @@ using namespace std;
 constexpr uint16_t DPORT_DFLT = 1440;
 
 static void show_usage(const char *argv0, const char *msg) {
-    cout << "Usage: " << argv0 << " [options] <host> <port>\n\n"
+    cerr << "Usage: " << argv0 << " [options] <host> <port>\n\n"
 
          << "   Option                                                          Default\n"
          << "   --                                                              --\n\n"
@@ -34,9 +34,9 @@ static void show_usage(const char *argv0, const char *msg) {
          << "   -h              Show this message and quit.\n\n";
 
     if (msg != nullptr) {
-        cout << msg;
+        cerr << msg;
     }
-    cout << endl;
+    cerr << endl;
 }
 
 static void check_argc(int argc, char **argv, int curr, const char *err) {

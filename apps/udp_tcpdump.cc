@@ -19,7 +19,7 @@
 using namespace std;
 
 static void show_usage(const char *arg0, const char *errmsg) {
-    cout << "Usage: " << arg0 << " [-i <intf>] [-F <file>] [-h|--help] <expression>\n\n"
+    cerr << "Usage: " << arg0 << " [-i <intf>] [-F <file>] [-h|--help] <expression>\n\n"
          << "  -i <intf>    only capture packets from <intf> (default: all)\n\n"
 
          << "  -F <file>    reads in a filter expression from <file>\n"
@@ -29,9 +29,9 @@ static void show_usage(const char *arg0, const char *errmsg) {
          << "  <expression> a filter expression in pcap-filter(7) syntax\n";
 
     if (errmsg != nullptr) {
-        cout << '\n' << errmsg;
+        cerr << '\n' << errmsg;
     }
-    cout << endl;
+    cerr << endl;
 }
 
 static void check_arg(char *arg0, int argc, int curr, const char *errmsg) {
@@ -131,9 +131,9 @@ int main(int argc, char **argv) {
 
     // create pcap handle
     if (dev != nullptr) {
-        cout << "Capturing on interface " << dev;
+        cerr << "Capturing on interface " << dev;
     } else {
-        cout << "Capturing on all interfaces";
+        cerr << "Capturing on all interfaces";
     }
     pcap_t *p_hdl = nullptr;
     const int dl_type = [&] {
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
         };
         p_hdl = pcap_open_live(dev, 65535, 0, 100, static_cast<char *>(errbuf));
         if (p_hdl == nullptr) {
-            cout << "\nError initiating capture: " << static_cast<char *>(errbuf) << endl;
+            cerr << "\nError initiating capture: " << static_cast<char *>(errbuf) << endl;
             exit(1);
         }
         int dlt = pcap_datalink(p_hdl);
@@ -152,10 +152,10 @@ int main(int argc, char **argv) {
             && dlt != DLT_LINUX_SLL2
 #endif
         ) {
-            cout << "\nError: unsupported datalink type " << pcap_datalink_val_to_description(dlt) << endl;
+            cerr << "\nError: unsupported datalink type " << pcap_datalink_val_to_description(dlt) << endl;
             exit(1);
         }
-        cout << " (type: " << pcap_datalink_val_to_description(dlt) << ")\n";
+        cerr << " (type: " << pcap_datalink_val_to_description(dlt) << ")\n";
         return dlt;
     }();
 
@@ -167,13 +167,13 @@ int main(int argc, char **argv) {
             f_stream << argv[i] << ' ';
         }
         string filter_expression = f_stream.str();
-        cout << "Using filter expression: " << filter_expression << "\n";
+        cerr << "Using filter expression: " << filter_expression << "\n";
         if (pcap_compile(p_hdl, &p_flt, filter_expression.c_str(), 1, PCAP_NETMASK_UNKNOWN) != 0) {
-            cout << "Error compiling filter expression: " << pcap_geterr(p_hdl) << endl;
+            cerr << "Error compiling filter expression: " << pcap_geterr(p_hdl) << endl;
             return EXIT_FAILURE;
         }
         if (pcap_setfilter(p_hdl, &p_flt) != 0) {
-            cout << "Error configuring packet filter: " << pcap_geterr(p_hdl) << endl;
+            cerr << "Error configuring packet filter: " << pcap_geterr(p_hdl) << endl;
             return EXIT_FAILURE;
         }
         pcap_freecode(&p_flt);
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     int next_ret = 0;
     struct pcap_pkthdr *pkt_hdr = nullptr;
     const uint8_t *pkt_data = nullptr;
-    cout << setfill('0');
+    cerr << setfill('0');
     while ((next_ret = pcap_next_ex(p_hdl, &pkt_hdr, &pkt_data)) >= 0) {
         if (next_ret == 0) {
             // timeout; just listen again
@@ -259,12 +259,12 @@ int main(int argc, char **argv) {
         // try to parse UDP payload as TCP packet
         auto seg = TCPSegment{};
         if (const auto res = seg.parse(string(payload), 0); res > ParseResult::BadChecksum) {
-            cout << "(did not recognize TCP header) src: " << src << " dst: " << dst << '\n';
+            cerr << "(did not recognize TCP header) src: " << src << " dst: " << dst << '\n';
         } else {
             const TCPHeader &tcp_hdr = seg.header();
             uint32_t seqlen = seg.length_in_sequence_space();
 
-            cout << src << ':' << tcp_hdr.sport << " > " << dst << ':' << tcp_hdr.dport << "\n    Flags ["
+            cerr << src << ':' << tcp_hdr.sport << " > " << dst << ':' << tcp_hdr.dport << "\n    Flags ["
 
                  << (tcp_hdr.urg ? "U" : "") << (tcp_hdr.psh ? "P" : "") << (tcp_hdr.rst ? "R" : "")
                  << (tcp_hdr.syn ? "S" : "") << (tcp_hdr.fin ? "F" : "") << (tcp_hdr.ack ? "." : "")
@@ -275,17 +275,17 @@ int main(int argc, char **argv) {
                  << " seq " << tcp_hdr.seqno;
 
             if (seqlen > 0) {
-                cout << ':' << (tcp_hdr.seqno + seqlen);
+                cerr << ':' << (tcp_hdr.seqno + seqlen);
             }
 
-            cout << " ack " << tcp_hdr.ackno << " win " << tcp_hdr.win << " length " << payload_len << endl;
+            cerr << " ack " << tcp_hdr.ackno << " win " << tcp_hdr.win << " length " << payload_len << endl;
         }
         hexdump(payload.data(), payload.size(), 8);
     }
 
     pcap_close(p_hdl);
     if (next_ret == -1) {
-        cout << "Error listening for packet: " << pcap_geterr(p_hdl) << endl;
+        cerr << "Error listening for packet: " << pcap_geterr(p_hdl) << endl;
         return EXIT_FAILURE;
     }
 

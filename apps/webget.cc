@@ -23,7 +23,7 @@ void get_URL(const string &host, const string &path) {
     sock2.write("Connection: close\r\n");
     sock2.write("\r\n");
     while(!sock2.eof()){
-    	cout<<sock2.read();
+    	cerr<<sock2.read();
     }
     sock2.close();
     //cerr << "Function called: get_URL(" << host << ", " << path << ").\n";

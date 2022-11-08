@@ -146,19 +146,19 @@ int main(int argc, char **argv) {
         }
 
         if (argc < 2) {
-            cout << "USAGE: " << argv[0] << " <filename>" << endl;
+            cerr << "USAGE: " << argv[0] << " <filename>" << endl;
             return EXIT_FAILURE;
         }
 
         char errbuf[PCAP_ERRBUF_SIZE];
         pcap_t *pcap = pcap_open_offline(argv[1], static_cast<char *>(errbuf));
         if (pcap == nullptr) {
-            cout << "ERROR opening " << argv[1] << ": " << static_cast<char *>(errbuf) << endl;
+            cerr << "ERROR opening " << argv[1] << ": " << static_cast<char *>(errbuf) << endl;
             return EXIT_FAILURE;
         }
 
         if (pcap_datalink(pcap) != 1) {
-            cout << "ERROR expected ethernet linktype in capture file" << endl;
+            cerr << "ERROR expected ethernet linktype in capture file" << endl;
             return EXIT_FAILURE;
         }
 
@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
         struct pcap_pkthdr hdr;
         while ((pkt = pcap_next(pcap, &hdr)) != nullptr) {
             if (hdr.caplen < 14) {
-                cout << "ERROR frame too short to contain Ethernet header\n";
+                cerr << "ERROR frame too short to contain Ethernet header\n";
                 ok = false;
                 continue;
             }
@@ -181,7 +181,7 @@ int main(int argc, char **argv) {
                 }
 
                 auto ip_parse_result = as_string(res);
-                cout << "ERROR got unexpected IP parse failure " << ip_parse_result << " for this datagram:\n";
+                cerr << "ERROR got unexpected IP parse failure " << ip_parse_result << " for this datagram:\n";
                 show_ethernet_frame(pkt, hdr);
                 hexdump(pkt + 14, hdr.caplen - 14);
                 ok = false;
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
                 }
 
                 auto tcp_parse_result = as_string(res);
-                cout << "ERROR got unexpected TCP parse failure " << tcp_parse_result << " for this segment:\n";
+                cerr << "ERROR got unexpected TCP parse failure " << tcp_parse_result << " for this segment:\n";
                 show_ethernet_frame(pkt, hdr);
                 hexdump(pkt + 14, hdr.caplen - 14);
                 ok = false;
@@ -205,7 +205,7 @@ int main(int argc, char **argv) {
             }
 
             if (expect_fail) {
-                cout << "ERROR: expected parse failure but got success. Something is wrong.\n";
+                cerr << "ERROR: expected parse failure but got success. Something is wrong.\n";
                 show_ethernet_frame(pkt, hdr);
                 hexdump(pkt + 14, hdr.caplen - 14);
                 ok = false;
@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
             }
 
             // parse succeeded. Create a new packet and rebuild the header by unparsing.
-            cout << dec;
+            cerr << dec;
 
             IPv4Datagram ip_dgram_copy;
             TCPSegment tcp_seg_copy;
@@ -237,10 +237,10 @@ int main(int argc, char **argv) {
             }  // ipv4_hdr_{orig,copy}, tcp_hdr_{orig,copy} go out of scope
 
             if (!compare_ip_headers_nolen(ip_dgram.header(), ip_dgram_copy.header())) {
-                cout << "ERROR: after unparsing, IP headers (other than length) don't match.\n";
+                cerr << "ERROR: after unparsing, IP headers (other than length) don't match.\n";
             }
             if (!compare_tcp_headers_nolen(tcp_seg.header(), tcp_seg_copy.header())) {
-                cout << "ERROR: after unparsing, TCP headers (other than length) don't match.\n";
+                cerr << "ERROR: after unparsing, TCP headers (other than length) don't match.\n";
             }
 
             // create a new datagram from the serialized IP and TCP headers + payload
@@ -252,10 +252,10 @@ int main(int argc, char **argv) {
 
             if (auto res = ip_dgram_copy2.parse(string(concat)); res != ParseResult::NoError) {
                 auto ip_parse_result = as_string(res);
-                cout << "ERROR got IP parse failure " << ip_parse_result << " for this datagram (copy2):\n";
-                cout << ip_dgram_copy.header().to_string();
+                cerr << "ERROR got IP parse failure " << ip_parse_result << " for this datagram (copy2):\n";
+                cerr << ip_dgram_copy.header().to_string();
                 hexdump(concat.data(), concat.size());
-                cout << endl;
+                cerr << endl;
                 hexdump(pkt + 14, hdr.caplen - 14);
                 ok = false;
                 continue;
@@ -265,36 +265,36 @@ int main(int argc, char **argv) {
             if (auto res = tcp_seg_copy2.parse(ip_dgram_copy2.payload(), ip_dgram_copy2.header().pseudo_cksum());
                 res != ParseResult::NoError) {
                 auto tcp_parse_result = as_string(res);
-                cout << "ERROR got TCP parse failure " << tcp_parse_result << " for this segment (copy2):\n";
-                cout << tcp_seg_copy.header().to_string();
+                cerr << "ERROR got TCP parse failure " << tcp_parse_result << " for this segment (copy2):\n";
+                cerr << tcp_seg_copy.header().to_string();
                 ok = false;
                 continue;
             }
 
             if (!compare_ip_headers_nolen(ip_dgram.header(), ip_dgram_copy2.header())) {
-                cout << "ERROR: after re-parsing, IP headers don't match (0<->2).\n";
+                cerr << "ERROR: after re-parsing, IP headers don't match (0<->2).\n";
                 ok = false;
                 continue;
             }
             if (!compare_ip_headers(ip_dgram_copy.header(), ip_dgram_copy2.header())) {
-                cout << "ERROR: after re-parsing, IP headers don't match (1<->2).\n";
+                cerr << "ERROR: after re-parsing, IP headers don't match (1<->2).\n";
                 ok = false;
                 continue;
             }
             if (!compare_tcp_headers_nolen(tcp_seg.header(), tcp_seg_copy2.header())) {
-                cout << "ERROR: after re-parsing, TCP headers don't match (0<->2).\n";
+                cerr << "ERROR: after re-parsing, TCP headers don't match (0<->2).\n";
                 ok = false;
                 continue;
             }
             if (!compare_tcp_headers(tcp_seg_copy.header(), tcp_seg_copy2.header())) {
-                cout << "ERROR: after re-parsing, TCP headers don't match (1<->2).\n";
+                cerr << "ERROR: after re-parsing, TCP headers don't match (1<->2).\n";
                 ok = false;
                 continue;
             }
             if (tcp_seg_copy.payload().str() != tcp_seg_copy2.payload().str()) {
-                cout << "ERROR: after re-parsing, TCP payloads don't match.\n";
+                cerr << "ERROR: after re-parsing, TCP payloads don't match.\n";
                 hexdump(tcp_seg_copy2.payload().str().data(), tcp_seg_copy2.payload().str().size());
-                cout << endl;
+                cerr << endl;
                 hexdump(tcp_seg_copy.payload().str().data(), tcp_seg_copy.payload().str().size());
                 ok = false;
                 continue;
@@ -306,7 +306,7 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
     } catch (const exception &e) {
-        cout << "Exception: " << e.what() << endl;
+        cerr << "Exception: " << e.what() << endl;
         return EXIT_FAILURE;
     }
 

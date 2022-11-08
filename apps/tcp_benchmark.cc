@@ -94,8 +94,8 @@ void main_loop(const bool reorder) {
 
     const auto gigabits_per_second = len * 8.0 / double(duration);
 
-    cout << fixed << setprecision(2);
-    cout << "CPU-limited throughput" << (reorder ? " with reordering: " : "                : ") << gigabits_per_second
+    cerr << fixed << setprecision(2);
+    cerr << "CPU-limited throughput" << (reorder ? " with reordering: " : "                : ") << gigabits_per_second
          << " Gbit/s\n";
 
     while (x.active() or y.active()) {

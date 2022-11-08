@@ -10,23 +10,23 @@
 #include <pcap/pcap.h>
 
 inline void show_ethernet_frame(const uint8_t *pkt, const struct pcap_pkthdr &hdr) {
-    const auto flags(std::cout.flags());
+    const auto flags(std::cerr.flags());
 
-    std::cout << "source MAC: ";
-    std::cout << std::hex << std::setfill('0');
+    std::cerr << "source MAC: ";
+    std::cerr << std::hex << std::setfill('0');
     for (unsigned i = 0; i < 6; ++i) {
-        std::cout << std::setw(2) << +pkt[i] << (i == 5 ? ' ' : ':');
+        std::cerr << std::setw(2) << +pkt[i] << (i == 5 ? ' ' : ':');
     }
 
-    std::cout << "    dest MAC: ";
+    std::cerr << "    dest MAC: ";
     for (unsigned i = 0; i < 6; ++i) {
-        std::cout << std::setw(2) << +pkt[i + 6] << (i == 5 ? ' ' : ':');
+        std::cerr << std::setw(2) << +pkt[i + 6] << (i == 5 ? ' ' : ':');
     }
 
-    std::cout << "    ethertype: " << std::setw(2) << +pkt[12] << std::setw(2) << +pkt[13] << '\n';
-    std::cout << std::dec << "length: " << hdr.len << "    captured: " << hdr.caplen << '\n';
+    std::cerr << "    ethertype: " << std::setw(2) << +pkt[12] << std::setw(2) << +pkt[13] << '\n';
+    std::cerr << std::dec << "length: " << hdr.len << "    captured: " << hdr.caplen << '\n';
 
-    std::cout.flags(flags);
+    std::cerr.flags(flags);
 }
 
 inline bool compare_tcp_headers_nolen(const TCPHeader &h1, const TCPHeader &h2) {

@@ -120,19 +120,19 @@ int main(int argc, char **argv) {
 
         // now process some segments off the wire for correctness of parser and unparser
         if (argc < 2) {
-            cout << "USAGE: " << argv[0] << " <filename>" << endl;
+            cerr << "USAGE: " << argv[0] << " <filename>" << endl;
             return EXIT_FAILURE;
         }
 
         char errbuf[PCAP_ERRBUF_SIZE];
         pcap_t *pcap = pcap_open_offline(argv[1], static_cast<char *>(errbuf));
         if (pcap == nullptr) {
-            cout << "ERROR opening " << argv[1] << ": " << static_cast<char *>(errbuf) << endl;
+            cerr << "ERROR opening " << argv[1] << ": " << static_cast<char *>(errbuf) << endl;
             return EXIT_FAILURE;
         }
 
         if (pcap_datalink(pcap) != 1) {
-            cout << "ERROR expected ethernet linktype in capture file" << endl;
+            cerr << "ERROR expected ethernet linktype in capture file" << endl;
             return EXIT_FAILURE;
         }
 
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
         struct pcap_pkthdr hdr;
         while ((pkt = pcap_next(pcap, &hdr)) != nullptr) {
             if (hdr.caplen < 14) {
-                cout << "ERROR frame too short to contain Ethernet header\n";
+                cerr << "ERROR frame too short to contain Ethernet header\n";
                 ok = false;
                 continue;
             }
@@ -179,14 +179,14 @@ int main(int argc, char **argv) {
 
             if (result != ParseResult::NoError) {
                 auto tcp_parse_result = as_string(result);
-                cout << "ERROR got unexpected parse failure " << tcp_parse_result << " for this segment:\n";
+                cerr << "ERROR got unexpected parse failure " << tcp_parse_result << " for this segment:\n";
                 hexdump(tcp_seg_data, tcp_seg_len);
                 ok = false;
                 continue;
             }
 
             // parse succeeded. Create a new segment and rebuild the header by unparsing.
-            cout << dec;
+            cerr << dec;
 
             TCPSegment tcp_seg_copy;
             tcp_seg_copy.payload() = tcp_seg.payload();
@@ -201,32 +201,32 @@ int main(int argc, char **argv) {
             }  // tcp_hdr_{orig,copy} go out of scope
 
             if (!compare_tcp_headers_nolen(tcp_seg.header(), tcp_seg_copy.header())) {
-                cout << "ERROR: after unparsing, TCP headers (other than length) don't match.\n";
+                cerr << "ERROR: after unparsing, TCP headers (other than length) don't match.\n";
             }
 
             TCPSegment tcp_seg_copy2;
             if (const auto res = tcp_seg_copy2.parse(tcp_seg_copy.serialize().concatenate());
                 res != ParseResult::NoError) {
                 auto tcp_parse_result = as_string(res);
-                cout << "ERROR got parse failure " << tcp_parse_result << " for this segment:\n";
-                cout << endl << "original:\n";
+                cerr << "ERROR got parse failure " << tcp_parse_result << " for this segment:\n";
+                cerr << endl << "original:\n";
                 hexdump(tcp_seg_data, tcp_seg_len);
                 ok = false;
                 continue;
             }
 
             if (!compare_tcp_headers_nolen(tcp_seg.header(), tcp_seg_copy2.header())) {
-                cout << "ERROR: after re-parsing, TCP headers don't match.\n";
+                cerr << "ERROR: after re-parsing, TCP headers don't match.\n";
                 ok = false;
                 continue;
             }
             if (!compare_tcp_headers(tcp_seg_copy.header(), tcp_seg_copy2.header())) {
-                cout << "ERROR: after re-parsing, TCP headers don't match.\n";
+                cerr << "ERROR: after re-parsing, TCP headers don't match.\n";
                 ok = false;
                 continue;
             }
             if (tcp_seg_copy.payload().str() != tcp_seg_copy2.payload().str()) {
-                cout << "ERROR: after re-parsing, TCP payloads don't match.\n";
+                cerr << "ERROR: after re-parsing, TCP payloads don't match.\n";
                 ok = false;
                 continue;
             }
@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
     } catch (const exception &e) {
-        cout << "Exception: " << e.what() << endl;
+        cerr << "Exception: " << e.what() << endl;
         return EXIT_FAILURE;
     }
 

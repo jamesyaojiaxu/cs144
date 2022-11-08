@@ -111,29 +111,29 @@ uint16_t InternetChecksum::value() const {
 //! \param[in] len is the number of bytes to show
 //! \param[in] indent is the number of spaces to indent
 void hexdump(const uint8_t *data, const size_t len, const size_t indent) {
-    const auto flags(cout.flags());
+    const auto flags(cerr.flags());
     const string indent_string(indent, ' ');
     int printed = 0;
     stringstream pchars(" ");
-    cout << hex << setfill('0');
+    cerr << hex << setfill('0');
     for (unsigned i = 0; i < len; ++i) {
         if ((printed & 0xf) == 0) {
             if (printed != 0) {
-                cout << "    " << pchars.str() << "\n";
+                cerr << "    " << pchars.str() << "\n";
                 pchars.str(" ");
             }
-            cout << indent_string << setw(8) << printed << ":    ";
+            cerr << indent_string << setw(8) << printed << ":    ";
         } else if ((printed & 1) == 0) {
-            cout << ' ';
+            cerr << ' ';
         }
-        cout << setw(2) << +data[i];
+        cerr << setw(2) << +data[i];
         pchars << (static_cast<bool>(isprint(data[i])) ? static_cast<char>(data[i]) : '.');
         printed += 1;
     }
     const int print_rem = (16 - (printed & 0xf)) % 16;  // extra spacing before final chars
-    cout << string(2 * print_rem + print_rem / 2 + 4, ' ') << pchars.str();
-    cout << '\n' << endl;
-    cout.flags(flags);
+    cerr << string(2 * print_rem + print_rem / 2 + 4, ' ') << pchars.str();
+    cerr << '\n' << endl;
+    cerr.flags(flags);
 }
 
 //! \param[in] data is a pointer to the bytes to show

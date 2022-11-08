@@ -68,7 +68,7 @@
       <arglist>(T... args)</arglist>
     </member>
     <class kind="class">std::ctype_byname</class>
-    <class kind="class">std::wcout</class>
+    <class kind="class">std::wcerr</class>
     <member kind="function">
       <type>T</type>
       <name>setiosflags</name>
@@ -280,7 +280,7 @@
     </member>
     <class kind="class">std::deca</class>
     <class kind="class">std::extreme_value_distribution</class>
-    <class kind="class">std::cout</class>
+    <class kind="class">std::cerr</class>
     <class kind="class">std::decay</class>
     <class kind="class">std::is_trivially_move_assignable</class>
     <class kind="class">std::adopt_lock_t</class>
@@ -4673,7 +4673,7 @@
     <filename>cpp/locale/ctype_base</filename>
   </compound>
   <compound kind="class">
-    <name>std::wcout</name>
+    <name>std::wcerr</name>
     <filename>cpp/io/basic_ostream</filename>
   </compound>
   <compound kind="class">
@@ -6265,7 +6265,7 @@
     </member>
   </compound>
   <compound kind="class">
-    <name>std::cout</name>
+    <name>std::cerr</name>
     <filename>cpp/io/basic_ostream</filename>
   </compound>
   <compound kind="class">

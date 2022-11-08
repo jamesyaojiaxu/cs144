@@ -102,12 +102,12 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     // 当前是Fin-Wait-2状态
     else if (_sender.stream_in().eof() && _sender.next_seqno_absolute() == _sender.stream_in().bytes_written() + 2 &&
              _sender.bytes_in_flight() == 0 && !_receiver.stream_out().input_ended()) {
-        if (seg.header().fin) {
+        //if (seg.header().fin) {
             _receiver.segment_received(seg);
             _sender.ack_received(seg.header().ackno, seg.header().win);
             _sender.send_empty_segment();
             send_data();
-        }
+        //}
     }
     // 当前是Time-Wait状态
     else if (_sender.stream_in().eof() && _sender.next_seqno_absolute() == _sender.stream_in().bytes_written() + 2 &&
@@ -170,9 +170,10 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     time += ms_since_last_tick;
     _sender.tick(ms_since_last_tick);
     if (_sender.consecutive_retransmissions() > TCPConfig::MAX_RETX_ATTEMPTS) {
-        // 发送RST标志
-        TCPSegment seg;
+        _sender.send_empty_segment();
+        TCPSegment seg = _sender.segments_out().front();
         seg.header().rst = true;
+        _sender.segments_out().pop();
         _segments_out.push(seg);
 
         // 在出站入站流中标记错误，使active返回false
@@ -200,8 +201,10 @@ TCPConnection::~TCPConnection() {
         if (active()) {
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
             // Your code here: need to send a RST segment to the peer
-            TCPSegment seg;
+            _sender.send_empty_segment();
+            TCPSegment seg = _sender.segments_out().front();
             seg.header().rst = true;
+            _sender.segments_out().pop();
             _segments_out.push(seg);
 
             // 在出站入站流中标记错误，使active返回false
