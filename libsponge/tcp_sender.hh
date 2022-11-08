@@ -41,7 +41,7 @@ class TCPSender {
 
     bool _fin;
 
-    int consec_retr;//consecutive_retransmissions
+    unsigned int consec_retr;//consecutive_retransmissions
 
     size_t time;//time has passed in 
 

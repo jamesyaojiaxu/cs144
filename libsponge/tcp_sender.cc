@@ -31,13 +31,14 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
 uint64_t TCPSender::bytes_in_flight() const { return flight; }
 
 void TCPSender::fill_window() {
-    if (nextseqnum == 0) {
+    if (next_seqno_absolute() == 0) {
         // state is CLOSED,where no syn sent
+        //send a syn packet
         TCPSegment seg;
         seg.header().syn = true;
         send_segment(seg);
         return;
-    } else if (nextseqnum > 0 && nextseqnum == flight) {
+    } else if (next_seqno_absolute() > 0 && next_seqno_absolute() == bytes_in_flight()) {
         // state is SYN SENT, don't send SYN
         return;
     }
@@ -101,7 +102,7 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
         //retransmit not-yet-acknowledged segment with smallest sequence number
         TCPSegment seg = _segments_cache.front();
         _segments_out.push(seg);
-        if (_window_size != 0) {
+        if (_window_size != 0 || _segments_cache.front().header().syn) {
             consec_retr++;
             rto = rto * 2;
         }
@@ -115,6 +116,7 @@ unsigned int TCPSender::consecutive_retransmissions() const { return consec_retr
 
 void TCPSender::send_empty_segment() {
     TCPSegment seg;
+    seg.header().seqno = wrap(nextseqnum, _isn);
     _segments_out.push(seg);
 }
 
